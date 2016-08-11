@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8" />
+    <title>MEAN Stack trial</title>
+    <link rel="stylesheet" type='text/css' href="stylesheets/style.css"/>
+</head>
+<body ng-app="MeanStackTrial" ng-controller="MeanStackController as controller">
+
+<script src="bower_components/angular/angular.js"></script>
+<script src="products.js" ></script>
+<h1>Products portal</h1>
+
+<div class="createForm">
+Create Product: <br/>
+Name <input type="text" ng-model="controller.productName"><br/>
+Quantity <input type="NUMBER" ng-model="controller.productQuantity"> <br/>
+{{ 2+ 2}}
+<button ng-click="controller.saveProduct(controller.productName,controller.productQuantity)" >Add product </button>
+
+</div>
+Product list
+<ul>
+    <li ng-repeat="product in controller.products"> <span class="productDetail">{{product.quantity}}</span> product(s) remaining of  <span class="productDetail">{{product.name}} </span> </li>
+</ul>
+
+</body>
+</html>

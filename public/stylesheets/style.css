@@ -6,3 +6,12 @@ body {
 a {
   color: #00B7FF;
 }
+.productDetail {
+  color: red;
+  font-style: italic;
+}
+
+.createForm {
+  padding: 10px;
+  border : solid 2px black;
+}
