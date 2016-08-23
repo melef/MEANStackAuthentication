@@ -6,7 +6,7 @@
   "globalDependencies": {
     "mocha": "registry:dt/mocha#2.2.5+20160720003353",
     "express": "registry:dt/express#4.0.0+20160708185218",
-    "node": "registry:dt/node#6.0.0+20160815222444",
+    "node": "registry:dt/node#6.0.0+20160818175514",
     "node-forge": "registry:dt/node-forge#0.0.0+20160815204137"
   }
 }
