@@ -6,17 +6,14 @@ import crypto = require('crypto');
 import nodeforge = require('node-forge');
 
 export class AsymmetricEncryptionHelper {
-    constructor() {
 
-    }
-
-    encryptStringWithRsaPublicKey(textToEncrypt: string, publicKey: string): string {
+   static encryptStringWithRsaPublicKey(textToEncrypt: string, publicKey: string): string {
         var buffer = new Buffer(textToEncrypt);
         var encrypted = crypto.publicEncrypt(publicKey, buffer);
         return encrypted.toString("base64");
     }
 
-    decryptStringWithRsaPrivateKey(textToDecrypt: string, privateKey: string): string {
+    static decryptStringWithRsaPrivateKey(textToDecrypt: string, privateKey: string): string {
         var buffer = new Buffer(textToDecrypt, "base64");
         var decrypted = crypto.privateDecrypt(privateKey, buffer);
         return decrypted.toString("utf8");

@@ -54,7 +54,7 @@ passport.serializeUser(Account.serializeUser());
 passport.deserializeUser(Account.deserializeUser());
 
 // connect db - required the mongo db to be started mongoose
-mongoose.connect('mongodb://localhost/products');
+mongoose.connect('mongodb://localhost/encryptedusertrials');
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
