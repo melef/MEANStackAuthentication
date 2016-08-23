@@ -42,4 +42,14 @@ node ./bin/www (you can find it in package.json)
 or Right-click on the app.js and run it
 ==
 
+===
+Typescript
+
+- generate the file after changes
+tsc greeter.ts 
+
+
 Access it via the link http://localhost:3000
+
+
+
