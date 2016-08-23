@@ -29,6 +29,8 @@ router.get('/login', function(req, res) {
 });
 
 router.post('/login', passport.authenticate('local'), function(req, res) {
+  //password can be directly taken out of the request body
+  console.log("USER IS: "+ req.body.password);
   res.redirect('/');
 });
 
