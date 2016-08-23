@@ -48,12 +48,20 @@ router.post('/register', function (req, res) {
          * Person needs to add more fields (address, age, etc.) and also data items I assume?
          *
          * */
-             var keyPair = createKeyPair();
-        var privateKeyEnc = symmetricEncrypt(keyPair.privateKey, algorithm, req.body.password);
-        var encryptionKey = "Static Random Encryption Key 34895ztrfnihw4htruifhwuiht89ghvnu48957gh8"; //TODO replace with real library
-        var encryptionKeyEnc = encryptStringWithRsaPublicKey(encryptionKey, keyPair.publicKey);
+        var mongoose = require('mongoose');
+        var db = mongoose.connection;
+        db.on('error', console.error.bind(console, 'connection error:'));
+        db.once('open', function () {
+            console.log("We are connected!");
+            // we're connected!
+        });
 
-        console.log("username: " + req.body.username + "\npublicKey: " + keyPair.publicKey + "\nprivate key: " + keyPair.privateKey + "\nprivateKeyEnc: " + privateKeyEnc + "\nencryptionKey: " + encryptionKey + "\nencryptionKeyEnc: " + encryptionKeyEnc)
+        var keyPair = createKeyPair();
+        var privateKeyEnc =  symmetricEncrypt(keyPair.privateKey, algorithm, req.body.password);
+        var encryptionKey = generateUUID(); //TODO replace with real library
+        var encryptionKeyEnc =  encryptStringWithRsaPublicKey(encryptionKey, keyPair.publicKey);
+
+        console.log("username: "+ req.body.username +"\npublicKey: "+ keyPair.publicKey+"\nprivate key: "+keyPair.privateKey +"\nprivateKeyEnc: "+privateKeyEnc+"\nencryptionKey: "+ encryptionKey+"\nencryptionKeyEnc: "+ encryptionKeyEnc)
         var Person = mongoose.model('Person', personSchema);
         var newPerson = new Person({
             username: req.body.username,
@@ -61,14 +69,14 @@ router.post('/register', function (req, res) {
             privateKeyEnc: privateKeyEnc,
             encryptionKeyEnc: encryptionKeyEnc
         });
-        console.log("username: " + newPerson.username + "\npublicKey: " + newPerson.publicKey + "\nprivateKeyEnc: " + newPerson.privateKeyEnc + "\encryptionKeyEnc: " + newPerson.encryptionKeyEnc)
+        console.log("username: "+ newPerson.username +"\npublicKey: "+ newPerson.publicKey+"\nprivateKeyEnc: "+newPerson.privateKeyEnc+ "\encryptionKeyEnc: "+ newPerson.encryptionKeyEnc)
 
         newPerson.save(function (err, newPerson) {
             if (err) {
-                console.log("could not save new person with name " + newPerson.username);
+                console.log("could not save new person with name " +newPerson.username);
                 return console.error(err);
-            } else {
-                console.log("Successfully saved new person with username " + newPerson.username);
+            }else{
+                console.log("Successfully saved new person with username "+ newPerson.username);
             }
 
         });
@@ -79,8 +87,17 @@ router.post('/register', function (req, res) {
     });
 });
 
-
-//TODO Refactor ... these functions come from AsymmetricEncryptionHelper.ts and SymmetricEncryptionHelper.ts because Typescript throws annoying not found errors.... needs to be fixed.
+//TODO maybe use some uid generator library i don't know... looks fine to me
+function generateUUID(){
+    var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+}
+//TODO Refactor ... these functions come from AsymmetricEncryptionHelper.ts and SymmetricEncryptionHelper.ts
 function symmetricEncrypt(text, algorithm, encryptionkey) {
     var cipher = crypto.createCipher(algorithm, encryptionkey)
     var crypted = cipher.update(text, 'utf8', 'hex')
@@ -89,7 +106,7 @@ function symmetricEncrypt(text, algorithm, encryptionkey) {
 }
 
 function symmetricDecrypt(text, algorithm, encryptionkey) {
-    var decipher = crypto.createDecipher(algorithm, encryptionkey)
+    var decipher = crypto.createDecipher( algorithm, encryptionkey)
     var dec = decipher.update(text, 'hex', 'utf8')
     dec += decipher.final('utf8');
     return dec;
@@ -109,7 +126,7 @@ var createKeyPair = function () {
     var pair = nodeforge.pki.rsa.generateKeyPair();
     var publicKey = nodeforge.pki.publicKeyToPem(pair.publicKey);
     var privateKey = nodeforge.pki.privateKeyToPem(pair.privateKey);
-    return {"privateKey": privateKey, "publicKey": publicKey};
+    return { "privateKey": privateKey, "publicKey": publicKey };
 };
 
 
