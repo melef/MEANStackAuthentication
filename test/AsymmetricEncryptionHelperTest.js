@@ -1,10 +1,10 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 "use strict";
-const AsymmetricEncryptionHelper_1 = require('../security/AsymmetricEncryptionHelper');
-const chai_1 = require("chai");
-describe('AsymmetricEncryptionHelper', () => {
-    describe('#asymmetric en- and decryption', () => {
-        it('should encrypt a data item using an asymmetric RSA key pair, and then decrypt it again, such that the decrypted data is the same as the input', (done) => {
+var AsymmetricEncryptionHelper_1 = require('../security/AsymmetricEncryptionHelper');
+var chai_1 = require("chai");
+describe('AsymmetricEncryptionHelper', function () {
+    describe('#asymmetric en- and decryption', function () {
+        it('should encrypt a data item using an asymmetric RSA key pair, and then decrypt it again, such that the decrypted data is the same as the input', function (done) {
             var data = "Hello World";
             var x = AsymmetricEncryptionHelper_1.AsymmetricEncryptionHelper.createKeyPair();
             var asymHelper = new AsymmetricEncryptionHelper_1.AsymmetricEncryptionHelper();
@@ -15,4 +15,3 @@ describe('AsymmetricEncryptionHelper', () => {
         });
     });
 });
-//# sourceMappingURL=AsymmetricEncryptionHelperTest.js.map

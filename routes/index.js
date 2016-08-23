@@ -3,6 +3,8 @@ var passport = require('passport');
 var Account = require('../models/account');
 var router = express.Router();
 
+var SymmetricEncryptionHelper = require('../security/SymmetricEncryptionHelper')
+
 
 router.get('/', function (req, res) {
   res.render('index', { user : req.user });
@@ -17,7 +19,6 @@ router.post('/register', function(req, res) {
     if (err) {
       return res.render('register', { account : account });
     }
-
     passport.authenticate('local')(req, res, function () {
       res.redirect('/');
     });
@@ -30,7 +31,10 @@ router.get('/login', function(req, res) {
 
 router.post('/login', passport.authenticate('local'), function(req, res) {
   //password can be directly taken out of the request body
-  console.log("USER IS: "+ req.body.password);
+  var algorithm = "aes-256-ctr";
+  var username = req.body.username;
+  SymmetricEncryptionHelper.symmetricDecrypt("privatekey", algorithm, req.body.password);
+
   res.redirect('/');
 });
 
