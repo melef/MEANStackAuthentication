@@ -2,6 +2,9 @@ var express = require('express');
 var passport = require('passport');
 var mongoose = require('mongoose');
 var Account = require('../models/account');
+var crypto = require('crypto');
+var nodeforge = require('node-forge');
+
 
 var router = express.Router();
 
@@ -28,7 +31,7 @@ var personSchema = new Schema({
 var Person = mongoose.model('personSchema', personSchema);
 
 /**
- * On registry, a new user is created. additionally, a PKI key pair is created and a symmetric encryption key. 
+ * On registry, a new user is created. additionally, a PKI key pair is created and a symmetric encryption key.
  */
 router.post('/register', function (req, res) {
     Account.register(new Account({username: req.body.username}), req.body.password, function (err, account) {
@@ -45,20 +48,12 @@ router.post('/register', function (req, res) {
          * Person needs to add more fields (address, age, etc.) and also data items I assume?
          *
          * */
-        var mongoose = require('mongoose');
-        var db = mongoose.connection;
-        db.on('error', console.error.bind(console, 'connection error:'));
-        db.once('open', function () {
-            console.log("We are connected!");
-            // we're connected!
-        });
+             var keyPair = createKeyPair();
+        var privateKeyEnc = symmetricEncrypt(keyPair.privateKey, algorithm, req.body.password);
+        var encryptionKey = "Static Random Encryption Key 34895ztrfnihw4htruifhwuiht89ghvnu48957gh8"; //TODO replace with real library
+        var encryptionKeyEnc = encryptStringWithRsaPublicKey(encryptionKey, keyPair.publicKey);
 
-        var keyPair = createKeyPair();
-        var privateKeyEnc =  symmetricEncrypt(keyPair.privateKey, algorithm, req.body.password);
-        var encryptionKey = "This is my encryption key"; //TODO replace with real library
-        var encryptionKeyEnc =  encryptStringWithRsaPublicKey(encryptionKey, keyPair.publicKey);
-
-        console.log("username: "+ req.body.username +"\npublicKey: "+ keyPair.publicKey+"\nprivateKeyEnc: "+privateKeyEnc+"\nencryptionKey: "+ encryptionKey+"\nencryptionKeyEnc: "+ encryptionKeyEnc)
+        console.log("username: " + req.body.username + "\npublicKey: " + keyPair.publicKey + "\nprivate key: " + keyPair.privateKey + "\nprivateKeyEnc: " + privateKeyEnc + "\nencryptionKey: " + encryptionKey + "\nencryptionKeyEnc: " + encryptionKeyEnc)
         var Person = mongoose.model('Person', personSchema);
         var newPerson = new Person({
             username: req.body.username,
@@ -66,14 +61,14 @@ router.post('/register', function (req, res) {
             privateKeyEnc: privateKeyEnc,
             encryptionKeyEnc: encryptionKeyEnc
         });
-        console.log("username: "+ newPerson.username +"\npublicKey: "+ newPerson.publicKey+"\nprivateKeyEnc: "+newPerson.privateKeyEnc+ "\encryptionKeyEnc: "+ newPerson.encryptionKeyEnc)
+        console.log("username: " + newPerson.username + "\npublicKey: " + newPerson.publicKey + "\nprivateKeyEnc: " + newPerson.privateKeyEnc + "\encryptionKeyEnc: " + newPerson.encryptionKeyEnc)
 
         newPerson.save(function (err, newPerson) {
             if (err) {
-                console.log("could not save new person with name " +newPerson.username);
+                console.log("could not save new person with name " + newPerson.username);
                 return console.error(err);
-            }else{
-                console.log("Successfully saved new person with username "+ newPerson.username);
+            } else {
+                console.log("Successfully saved new person with username " + newPerson.username);
             }
 
         });
@@ -83,9 +78,9 @@ router.post('/register', function (req, res) {
         });
     });
 });
-var crypto = require('crypto');
-var nodeforge = require('node-forge');
 
+
+//TODO Refactor ... these functions come from AsymmetricEncryptionHelper.ts and SymmetricEncryptionHelper.ts because Typescript throws annoying not found errors.... needs to be fixed.
 function symmetricEncrypt(text, algorithm, encryptionkey) {
     var cipher = crypto.createCipher(algorithm, encryptionkey)
     var crypted = cipher.update(text, 'utf8', 'hex')
@@ -94,7 +89,7 @@ function symmetricEncrypt(text, algorithm, encryptionkey) {
 }
 
 function symmetricDecrypt(text, algorithm, encryptionkey) {
-    var decipher = crypto.createDecipher( algorithm, encryptionkey)
+    var decipher = crypto.createDecipher(algorithm, encryptionkey)
     var dec = decipher.update(text, 'hex', 'utf8')
     dec += decipher.final('utf8');
     return dec;
@@ -114,7 +109,7 @@ var createKeyPair = function () {
     var pair = nodeforge.pki.rsa.generateKeyPair();
     var publicKey = nodeforge.pki.publicKeyToPem(pair.publicKey);
     var privateKey = nodeforge.pki.privateKeyToPem(pair.privateKey);
-    return { "privateKey": privateKey, "publicKey": publicKey };
+    return {"privateKey": privateKey, "publicKey": publicKey};
 };
 
 
