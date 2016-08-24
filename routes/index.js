@@ -88,7 +88,7 @@ router.post('/register', function (req, res) {
                 FEV1: 789
             }
 
-        ]
+        ];
         var d1String = JSON.stringify(d1[0]);
         var d2String = JSON.stringify(d1[1]);
         var d3String = JSON.stringify(d1[2]);
@@ -102,7 +102,6 @@ router.post('/register', function (req, res) {
         newPerson.spirometryData.push(encD3String);
 
         console.log("username: " + newPerson.username + "\npublicKey: " + newPerson.publicKey + "\nprivateKeyEnc: " + newPerson.privateKeyEnc + "\encryptionKeyEnc: " + newPerson.encryptionKeyEnc)
-
         newPerson.save(function (err, newPerson) {
             if (err) {
                 console.log("could not save new person with name " + newPerson.username);
@@ -128,7 +127,7 @@ router.post('/login', passport.authenticate('local'), function (req, res) {
     //username & password can be directly taken out of the request body
     var username = req.body.username;
     var password = req.body.password;
-
+ 
     console.log("User: " + username + ", pw: " + password);
 
     /*
@@ -139,7 +138,6 @@ router.post('/login', passport.authenticate('local'), function (req, res) {
      * it is questionable if the encryption key should only be decrypted once on login and then stored in memory somehow (session, JWT)
      * or instead decrypted on every request (as rest means stateless...)
      */
-
     Person.findOne({username: username}, function (err, user) {
         console.log("User in db is: " + JSON.stringify(user));
         if (err) {
