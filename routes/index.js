@@ -123,11 +123,12 @@ router.get('/login', function (req, res) {
 });
 
 
-router.post('/login', passport.authenticate('local'), function (req, res) {
+router.post('/login', passport.authenticate('local', {session: false}), function (req, res) {
+
     //username & password can be directly taken out of the request body
     var username = req.body.username;
     var password = req.body.password;
- 
+
     console.log("User: " + username + ", pw: " + password);
 
     /*
@@ -153,13 +154,16 @@ router.post('/login', passport.authenticate('local'), function (req, res) {
         console.log("encryption key: " + encryptionKey);
         //TODO what to do with the decrypted encryption key? Store it in a session, JWT, or not at all
 
+        var dataDecrypted = [];
         //Decrypt the data items and print them to the screen
         for (var i = 0; i < user.spirometryData.length; ++i) {
             var dataItem = symmetricDecrypt(user.spirometryData[i], algorithm, encryptionKey);
             var dataAsJson = JSON.parse(dataItem);
-            console.log("Data item " + (i + 1) + " has dateTime: " + dataAsJson.dateTime + " FVC: " + dataAsJson.FVC + ", FEV1: " + dataAsJson.FEV1);
+
+            dataDecrypted.push("Data item " + (i + 1) + " has dateTime: " + dataAsJson.dateTime + " FVC: " + dataAsJson.FVC + ", FEV1: " + dataAsJson.FEV1);
         }
-        res.redirect('/');
+        //res.redirect('/');
+        res.render('index', {data:dataDecrypted});
     });
 
 });
@@ -170,7 +174,13 @@ router.get('/logout', function (req, res) {
 });
 
 router.get('/ping', function (req, res) {
-    res.status(200).send("pong!");
+    var isAuthen = "";
+    if(req.user){
+        isAuthen = "User is authenticated. Should not happen";
+    }else{
+        isAuthen = "User is not authenticated. Thats what we want";
+    }
+    res.status(200).send(isAuthen);
 });
 
 //TODO maybe use some uid generator library i don't know... looks fine to me
