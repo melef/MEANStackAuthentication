@@ -172,11 +172,12 @@ router.post('/login', passport.authenticate('local', {session: false}), function
         // retrieve all the users I have access (consent) to
         var consentUsers = [];
         var callback = function(err, users) {
-            console.log("consent user found: " + users)
+            console.log("consent user found: " + users.toString())
             for (var i = 0; i < users.length; i++) {
                 consentUsers.push(users[i].sender);
             }
             //res.redirect('/');
+            // the redirect needs to be here at the callback otherwise the consentUsers are not available for the jade file
             res.render('index', {data: dataDecrypted, consentUsers: consentUsers});
         };
 
