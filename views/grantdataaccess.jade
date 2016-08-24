@@ -1,0 +1,19 @@
+extends layout
+block content
+    .container
+        h1 Share data
+        p.lead Grant acceess to your data to other members.
+        br
+        form(role='form', action="/grantdataaccess",method="post", style='max-width: 300px;')
+            .form-group
+                input.form-control(type='text', name="username", placeholder='Enter Username')
+            .form-group
+                input.form-control(type='password', name="password", placeholder='Password')
+            .form-group
+                label Selects
+                select(name='receiver', placeholder='Choose person to grant access').form-control
+                    each username in usernames
+                        option(value=username) #{username}
+            button.btn.btn-default(type='submit') Submit
+    a(href='/')
+        button.btn.btn-primary(type="button") Cancel

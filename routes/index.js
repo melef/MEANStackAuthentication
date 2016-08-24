@@ -25,6 +25,8 @@ router.get('/', function (req, res) {
 router.get('/register', function (req, res) {
     res.render('register', {});
 });
+
+// Schemas
 var Schema = mongoose.Schema;
 
 var personSchema = new Schema({
@@ -32,12 +34,22 @@ var personSchema = new Schema({
     publicKey: String, //Public key of the PKI
     privateKeyEnc: String, //Encrypted private key of the PKI, encrypted using password (symmetric encryption currently)
     encryptionKeyEnc: String, //Encrypted encryption key used to encrypt data, encrypted using the public key
-    spirometryData: []
+    spirometryData: []  // measurements
 });
 
 
 var Person = mongoose.model('personSchema', personSchema);
 
+var consentSchema = new Schema({
+    sender: String, //username of the person giving the consent for her/his data
+    receiver: String, //username of the person getting the consent for the other user's data
+    encryptionKeyEnc: String //Encrypted encryption key used to decrypt the other users data. Encrypted with public key of the receiver
+});
+
+
+var Consent = mongoose.model('consentSchema', consentSchema);
+
+// hanble end points
 /**
  * On registry, a new user is created. additionally, a PKI key pair is created and a symmetric encryption key.
  */
@@ -100,6 +112,7 @@ router.post('/register', function (req, res) {
         newPerson.spirometryData.push(encD1String);
         newPerson.spirometryData.push(encD2String);
         newPerson.spirometryData.push(encD3String);
+        //END Dummy data added to entry
 
         console.log("username: " + newPerson.username + "\npublicKey: " + newPerson.publicKey + "\nprivateKeyEnc: " + newPerson.privateKeyEnc + "\encryptionKeyEnc: " + newPerson.encryptionKeyEnc)
         newPerson.save(function (err, newPerson) {
@@ -116,12 +129,6 @@ router.post('/register', function (req, res) {
         });
     });
 });
-
-
-router.get('/login', function (req, res) {
-    res.render('login', {user: req.user});
-});
-
 
 router.post('/login', passport.authenticate('local', {session: false}), function (req, res) {
 
@@ -162,11 +169,107 @@ router.post('/login', passport.authenticate('local', {session: false}), function
 
             dataDecrypted.push("Data item " + (i + 1) + " has dateTime: " + dataAsJson.dateTime + " FVC: " + dataAsJson.FVC + ", FEV1: " + dataAsJson.FEV1);
         }
-        //res.redirect('/');
-        res.render('index', {data:dataDecrypted});
+        // retrieve all the users I have access (consent) to
+        var consentUsers = [];
+        var callback = function(err, users) {
+            console.log("consent user found: " + users)
+            for (var i = 0; i < users.length; i++) {
+                consentUsers.push(users[i].sender);
+            }
+            //res.redirect('/');
+            res.render('index', {data: dataDecrypted, consentUsers: consentUsers});
+        };
+
+        Consent.find().where('receiver').equals(username).select('sender').exec(callback);
+
     });
 
 });
+
+router.get('/login', function (req, res) {
+    res.render('login');
+});
+router.get('/grantdataaccess', function (req, res) {
+
+    Person.find({}, function (err, people) {
+        if (err) {
+            console.log("Problem with grantdataaccess.");
+            res.render('/');
+        }
+        var usernames = [];
+
+        for (var i = 0; i < people.length; ++i) {
+            usernames.push(people[i].username);
+        }
+        res.render('grantdataaccess', {usernames: usernames});
+    });
+});
+
+router.post('/grantdataaccess', passport.authenticate('local', {session: false}), function (req, res) {
+
+    //username & password can be directly taken out of the request body
+    var username = req.body.username;
+    var password = req.body.password;
+
+    console.log("User: " + username + ", pw: " + password);
+
+    /*
+     * Again I will just post the intentions and goals here what to achieve. Not much of a best practiced solution.
+     * So when a user logs in with username and password, the private key needs to be decrypted using this password,
+     * and then used to decrypt the encryption key, which is then used again to decrypt the data of this user.
+     * The problems now are that the decryption may take quite some time the user may not be willing to wait, so
+     * it is questionable if the encryption key should only be decrypted once on login and then stored in memory somehow (session, JWT)
+     * or instead decrypted on every request (as rest means stateless...)
+     */
+    Person.findOne({username: username}, function (err, user) {
+
+        //First of all, get the encryption key of the user and decrypt it
+        console.log("User in db is: " + JSON.stringify(user));
+        if (err) {
+            console.log("Could not find user with username: " + username);
+            res.redirect('/');
+        }
+        console.log("private key encrypted: " + user.privateKeyEnc);
+        //Decrypt the private key using the password in clear text
+        var privateKey = symmetricDecrypt(user.privateKeyEnc, algorithm, password);
+        console.log(privateKey);
+        //Decrypt the encryption key using the decrypted private key
+        var encryptionKey = decryptStringWithRsaPrivateKey(user.encryptionKeyEnc, privateKey)
+        console.log("encryption key: " + encryptionKey);
+        //TODO what to do with the decrypted encryption key? Store it in a session, JWT, or not at all
+        //give the select a name and then you can access the name of the select to retrieve the selected item.
+
+        //Now, get the public key of the user you grant access to, and decrypt the sender's encryption key with it
+        Person.findOne({username: req.body.receiver}, function (err, person) {
+            if (err) {
+                res.status(404).send("could not find user with username " + req.body.usernames);
+            }
+
+            var encrypteionKeyEnc = encryptStringWithRsaPublicKey(encryptionKey, person.publicKey);
+            console.log("Encryption key of sender after encrypting it with public key of receiver:\n" + encrypteionKeyEnc);
+            console.log("PRIVATE KEY: " + person.privateKeyEnc);
+            console.log("Decrypted again: " + decryptStringWithRsaPrivateKey(encrypteionKeyEnc, symmetricDecrypt(person.privateKeyEnc, algorithm, "1")));
+            var newConsent = new Consent({
+                sender: username,
+                receiver: person.username,
+                encryptionKeyEnc: encrypteionKeyEnc
+            });
+
+            newConsent.save(function (err, newConsent) {
+                if (err) {
+                    console.log("could not save new consent for user " + newConsent.receiver);
+                    return console.error(err);
+                } else {
+                    console.log("Successfully saved new consent for user " + newConsent.receiver);
+                }
+            });
+            res.status(200).send("new consent added for receiver: " + req.body.receiver + " from sender " + newConsent.sender);
+
+        });
+    });
+
+});
+
 
 router.get('/logout', function (req, res) {
     req.logout();
@@ -175,9 +278,9 @@ router.get('/logout', function (req, res) {
 
 router.get('/ping', function (req, res) {
     var isAuthen = "";
-    if(req.user){
+    if (req.user) {
         isAuthen = "User is authenticated. Should not happen";
-    }else{
+    } else {
         isAuthen = "User is not authenticated. Thats what we want";
     }
     res.status(200).send(isAuthen);
