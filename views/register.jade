@@ -5,6 +5,8 @@ block content
     h1 Register Page
     p.lead Say something worthwhile here.
     br
+    if (error)
+      h4  #{error}
     form(role='form', action="/register",method="post", style='max-width: 300px;')
       .form-group
           input.form-control(type='text', name="username", placeholder='Enter Username')

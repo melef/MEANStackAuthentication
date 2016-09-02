@@ -1,4 +1,5 @@
 var express = require('express');
+var app = express();
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -17,10 +18,6 @@ var cors = require("cors");
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 
-var app = express();
-
-
-
 
 app.use(cors());
 
@@ -34,11 +31,13 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+/*
 app.use(require('express-session')({
     secret: 'keyboard cat',
     resave: false,
     saveUninitialized: false
-}));
+})); */
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -46,15 +45,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', routes);
 app.use('/users', users);
 
+// connect db - required the mongo db to be started mongoose
+mongoose.connect('mongodb://localhost/encryptedusertrials');
 
-// passport config
+// Model and passport config
 var Account = require('./models/account');
 passport.use(new LocalStrategy(Account.authenticate()));
 passport.serializeUser(Account.serializeUser());
 passport.deserializeUser(Account.deserializeUser());
 
-// connect db - required the mongo db to be started mongoose
-mongoose.connect('mongodb://localhost/encryptedusertrials');
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

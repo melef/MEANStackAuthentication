@@ -1,17 +1,26 @@
 extends layout
 
 block content
-  //if (!user)
-  a(href="/login") Login
-  //  br
+  if (!user)
+    a(href="/login") Login
+    br
     a(href="/register") Register
-  //if (user)
-  p You are currently logged in
-    //as #{user.username}
-  a(href="/logout") Logout
 
-  if (data)
-    p the data is: #{data.toString()}
+  if (user)
+        p You are currently logged in as:
+            b  #{user.username}
+        a(href="/logout") Logout
 
-  if (consentUsers)
-   p I have access to the following users #{consentUsers.toString()}
+
+      if (user.data)
+        h3 My data
+        ul
+        each val in user.data
+            li= val
+
+      if (user.consents)
+       h3 Consents
+       p I have access to the following users
+       ul
+       each cons in user.consents
+                   li= con
